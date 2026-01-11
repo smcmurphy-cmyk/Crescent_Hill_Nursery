@@ -9,9 +9,7 @@ import { NativeSpeciesMap } from './components/NativeSpeciesMap';
 import { SustainabilityPolicy } from './components/SustainabilityPolicy';
 import { AvailabilityList } from './components/AvailabilityList';
 import { SERVICES, NEWSLETTER_ARCHIVES } from './constants';
-
-// --- NEW IMPORTS ---
-// We use curly braces {} because we used "export const" in the files
+import { EventsCalendar } from './components/EventsCalendar';
 import { CheckoutPage } from './components/Checkout';  
 import { MailOrderPage } from './components/MailOrder';
 
@@ -33,7 +31,8 @@ import {
   Send,
   ExternalLink,
   BookOpen,
-  ChevronLeft
+  ChevronLeft,
+  Camera // <--- ADDED THIS IMPORT
 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -65,7 +64,6 @@ const App: React.FC = () => {
   const handleCartIconClick = () => {
     if (currentPage !== Page.MAIL_ORDER) {
       setPage(Page.MAIL_ORDER);
-      // Give the page a moment to render before opening the mobile drawer
       setTimeout(() => setIsMobileCartOpen(true), 100);
     } else {
       setIsMobileCartOpen(true);
@@ -100,7 +98,6 @@ const App: React.FC = () => {
       setCheckoutStep('info');
     }
     window.scrollTo(0, 0);
-    // Don't auto-close drawer when navigating to MAIL_ORDER if triggered by cart click
     if (currentPage !== Page.MAIL_ORDER) {
       setIsMobileCartOpen(false);
     }
@@ -109,7 +106,6 @@ const App: React.FC = () => {
   const renderServiceIcon = (iconName: string) => {
     const iconProps = { size: 32, strokeWidth: 1.5 };
     switch (iconName) {
-      // Note: Package icon removed from import to avoid conflict, standardizing icons here
       case 'Package': return <Truck {...iconProps} />; 
       case 'Truck': return <Truck {...iconProps} />;
       case 'Users': return <Users {...iconProps} />;
@@ -158,7 +154,6 @@ const App: React.FC = () => {
   const NewsletterSection = ({ isFullPage = false }: { isFullPage?: boolean }) => (
     <div className={`py-20 ${isFullPage ? 'bg-stone-50' : 'bg-stone-100 border-y border-stone-200'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Banner Section */}
         <div className="bg-white rounded-3xl p-8 md:p-16 shadow-xl border border-stone-200 flex flex-col md:flex-row items-center gap-12 relative overflow-hidden mb-16">
           <div className="absolute -right-20 -bottom-20 opacity-5 pointer-events-none">
              <Logo size="text-[200px]" />
@@ -206,7 +201,6 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Archives Section - Only shown on dedicated page */}
         {isFullPage && (
           <div className="animate-in fade-in slide-in-from-bottom-5 duration-700">
             <div className="flex items-center gap-4 mb-10">
@@ -318,63 +312,146 @@ const App: React.FC = () => {
     </div>
   );
 
-  const WholesalePage = () => (
-    <div className="bg-stone-50 py-16">
-      <div className="max-w-7xl mx-auto px-4">
-        <button onClick={() => setPage(Page.SERVICES)} className="flex items-center gap-2 text-stone-500 hover:text-crescent-green mb-8 transition-colors">
-          <ChevronLeft size={20} /> Back to Services
-        </button>
-        <div className="grid lg:grid-cols-2 gap-12">
-          <div>
-            <span className="text-crescent-accent font-bold uppercase tracking-widest text-sm mb-4 block">For Professionals</span>
-            <h1 className="text-5xl font-serif font-bold text-crescent-green mb-8">Wholesale & Trade</h1>
-            <p className="text-xl text-stone-600 mb-8 leading-relaxed">Crescent Hill Nursery partners with landscape architects, designers, and retailers to provide bulk quantities of rare Mediterranean and native species.</p>
-            <div className="space-y-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-100 flex items-center gap-6">
-                 <div className="bg-crescent-green text-white p-4 rounded-full"><Users size={24} /></div>
-                 <div>
-                    <h3 className="font-bold text-xl">Designer Discounts</h3>
-                    <p className="text-stone-500">Tiered pricing based on volume for registered trade pros.</p>
-                 </div>
-              </div>
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-100 flex items-center gap-6">
-                 <div className="bg-crescent-green text-white p-4 rounded-full"><Truck size={24} /></div>
-                 <div>
-                    <h3 className="font-bold text-xl">Direct Delivery</h3>
-                    <p className="text-stone-500">On-site delivery for large-scale landscaping projects.</p>
-                 </div>
+  const WholesalePage = () => {
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleWholesaleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setIsSubmitting(true);
+
+      const form = e.target as HTMLFormElement;
+      const formData = new FormData(form);
+
+      const data = {
+        "Company Name": formData.get('companyName'),
+        "Contact Name": formData.get('contactName'), 
+        "License ID": formData.get('licenseId'),     
+        "Email": formData.get('email'),
+        "Type": formData.get('businessType'),
+        "Date": new Date().toLocaleString()
+      };
+
+      try {
+        // REPLACE WITH YOUR ACTUAL DEPLOYED SCRIPT URL
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQ4wIVJktiZjjMPi7yCI_YU8dab4Md0ZMUtCy-tcgh0mmh9hd-W00hPAcKYGEJb15H/exec";
+
+        await fetch(GOOGLE_SCRIPT_URL, {
+          method: "POST",
+          body: JSON.stringify(data),
+          mode: "no-cors"
+        });
+
+        alert("Application Received! We will review your license and contact you shortly.");
+        form.reset();
+      } catch (error) {
+        console.error("Error!", error);
+        alert("Something went wrong. Please call us directly.");
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
+    return (
+      <div className="bg-stone-50 py-16">
+        <div className="max-w-7xl mx-auto px-4">
+          <button onClick={() => setPage(Page.SERVICES)} className="flex items-center gap-2 text-stone-500 hover:text-crescent-green mb-8 transition-colors">
+            <ChevronLeft size={20} /> Back to Services
+          </button>
+          <div className="grid lg:grid-cols-2 gap-12">
+            <div>
+              <span className="text-crescent-accent font-bold uppercase tracking-widest text-sm mb-4 block">For Professionals</span>
+              <h1 className="text-5xl font-serif font-bold text-crescent-green mb-8">Wholesale & Trade</h1>
+              <p className="text-xl text-stone-600 mb-8 leading-relaxed">Crescent Hill Nursery partners with landscape architects, designers, and retailers to provide bulk quantities of rare Mediterranean and native species.</p>
+              <div className="space-y-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-100 flex items-center gap-6">
+                   <div className="bg-crescent-green text-white p-4 rounded-full"><Users size={24} /></div>
+                   <div>
+                      <h3 className="font-bold text-xl">Designer Discounts</h3>
+                      <p className="text-stone-500">Tiered pricing based on volume for registered trade pros.</p>
+                   </div>
+                </div>
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-stone-100 flex items-center gap-6">
+                   <div className="bg-crescent-green text-white p-4 rounded-full"><Truck size={24} /></div>
+                   <div>
+                      <h3 className="font-bold text-xl">Direct Delivery</h3>
+                      <p className="text-stone-500">On-site delivery for large-scale landscaping projects.</p>
+                   </div>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="bg-white p-12 rounded-2xl shadow-2xl">
-            <h2 className="text-3xl font-serif font-bold mb-8">Apply for Wholesale</h2>
-            <form className="space-y-6" onSubmit={e => e.preventDefault()}>
-              <div>
-                <label className="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Company Name</label>
-                <input type="text" className="w-full bg-stone-50 border border-stone-200 p-4 rounded-lg outline-none focus:ring-2 focus:ring-crescent-green/20" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Trade License ID</label>
-                <input type="text" className="w-full bg-stone-50 border border-stone-200 p-4 rounded-lg outline-none focus:ring-2 focus:ring-crescent-green/20" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Primary Business Type</label>
-                <select className="w-full bg-stone-50 border border-stone-200 p-4 rounded-lg outline-none focus:ring-2 focus:ring-crescent-green/20">
-                   <option>Landscape Architecture</option>
-                   <option>Garden Center</option>
-                   <option>Interior Styling</option>
-                   <option>Event Planning</option>
-                </select>
-              </div>
-              <button className="w-full bg-crescent-green text-white font-bold py-5 rounded-lg hover:bg-black transition-all">
-                Submit Application
-              </button>
-            </form>
+            
+            <div className="bg-white p-12 rounded-2xl shadow-2xl">
+              <h2 className="text-3xl font-serif font-bold mb-8">Apply for Wholesale</h2>
+              <form className="space-y-6" onSubmit={handleWholesaleSubmit}>
+                <div>
+                  <label className="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Company Name</label>
+                  <input required name="companyName" type="text" className="w-full bg-stone-50 border border-stone-200 p-4 rounded-lg outline-none focus:ring-2 focus:ring-crescent-green/20" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Contact Name</label>
+                  <input required name="contactName" type="text" placeholder="Who should we ask for?" className="w-full bg-stone-50 border border-stone-200 p-4 rounded-lg outline-none focus:ring-2 focus:ring-crescent-green/20" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Email Address</label>
+                  <input required name="email" type="email" className="w-full bg-stone-50 border border-stone-200 p-4 rounded-lg outline-none focus:ring-2 focus:ring-crescent-green/20" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Trade License ID</label>
+                  <input required name="licenseId" type="text" className="w-full bg-stone-50 border border-stone-200 p-4 rounded-lg outline-none focus:ring-2 focus:ring-crescent-green/20" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-500 uppercase tracking-widest mb-2">Primary Business Type</label>
+                  <select name="businessType" className="w-full bg-stone-50 border border-stone-200 p-4 rounded-lg outline-none focus:ring-2 focus:ring-crescent-green/20">
+                     <option value="Landscape Architecture">Landscape Architecture</option>
+                     <option value="Garden Center">Garden Center</option>
+                     <option value="Interior Styling">Interior Styling</option>
+                     <option value="Event Planning">Event Planning</option>
+                  </select>
+                </div>
+                <button 
+                  disabled={isSubmitting}
+                  className="w-full bg-crescent-green text-white font-bold py-5 rounded-lg hover:bg-black transition-all disabled:opacity-50 disabled:cursor-wait"
+                >
+                  {isSubmitting ? 'Sending Application...' : 'Submit Application'}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
+
+  // --- ADDED THIS CONSTANT FOR YOUR NEW DESIGNS SECTION ---
+  const designs = [
+    {
+      id: 1,
+      title: 'The Coastal Respite',
+      location: 'Big Sur, CA',
+      description: 'A wind-swept bluff restoration using exclusively native succulents and grasses.',
+      image: 'https://images.unsplash.com/photo-1558904541-e46c2ef80e68?auto=format&fit=crop&w=800&q=80',
+      rotation: 'md:-rotate-6',
+      translate: 'md:-translate-y-12 md:-translate-x-8',
+    },
+    {
+      id: 2,
+      title: 'Carmel Courtyard',
+      location: 'Carmel Valley, CA',
+      description: 'Drought-tolerant hardscaping meets soft english lavender and sage.',
+      image: 'https://images.unsplash.com/photo-1598902168919-63a2386926f7?auto=format&fit=crop&w=800&q=80',
+      rotation: 'md:rotate-3',
+      translate: 'md:translate-y-8 z-10',
+    },
+    {
+      id: 3,
+      title: 'Modern Zen',
+      location: 'Santa Cruz, CA',
+      description: 'Clean lines and river stones framing ancient olive trees.',
+      image: 'https://images.unsplash.com/photo-1592595896551-12b371d546d5?auto=format&fit=crop&w=800&q=80',
+      rotation: 'md:-rotate-3',
+      translate: 'md:translate-x-8 md:-translate-y-4',
+    }
+  ];
 
   const ConsultationPage = () => (
     <div className="bg-stone-50 py-16">
@@ -432,6 +509,61 @@ const App: React.FC = () => {
             </div>
           </div>
         </div>
+        
+        {/* New "Our Designs" Section */}
+          <div className="py-20 border-t border-stone-200">
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 px-4 py-1 bg-crescent-light text-crescent-green rounded-full text-[10px] font-bold uppercase tracking-[0.2em] mb-4">
+                <Camera size={14} /> Portfolio
+              </div>
+              <h2 className="text-4xl md:text-5xl font-serif font-bold text-crescent-green mb-4">Our Designs</h2>
+              <p className="text-stone-500 max-w-xl mx-auto italic">Crafting ecological landscapes that honor the spirit of the Central Coast.</p>
+            </div>
+
+            <div className="relative flex flex-col md:flex-row items-center justify-center gap-12 md:gap-4 md:h-[500px]">
+              {designs.map((design) => (
+                <div 
+                  key={design.id}
+                  className={`
+                    w-full md:w-[350px] bg-white p-4 shadow-2xl rounded-sm border border-stone-100
+                    transition-all duration-500 ease-out cursor-pointer
+                    md:absolute group hover:z-50 hover:scale-105 hover:rotate-0
+                    ${design.rotation} ${design.translate}
+                  `}
+                >
+                  <div className="aspect-[4/5] overflow-hidden mb-4 relative">
+                    <img 
+                      src={design.image} 
+                      alt={design.title} 
+                      className="w-full h-full object-cover grayscale-[30%] group-hover:grayscale-0 transition-all duration-700" 
+                    />
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-serif font-bold text-xl text-gray-900">{design.title}</h3>
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-crescent-accent flex items-center gap-1">
+                        <MapPin size={10} /> {design.location}
+                      </span>
+                    </div>
+                    <p className="text-xs text-stone-500 leading-relaxed font-hand text-lg pt-2">{design.description}</p>
+                  </div>
+                  
+                  {/* Interactive Seal/Badge on Hover */}
+                  <div className="absolute -bottom-4 -right-4 bg-crescent-green text-white w-16 h-16 rounded-full flex flex-col items-center justify-center scale-0 group-hover:scale-100 transition-transform duration-500 rotate-12 shadow-xl border-4 border-white">
+                    <span className="text-[8px] font-bold leading-none uppercase">Project</span>
+                    <span className="text-sm font-serif font-bold italic leading-none">Done</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-24 md:mt-12 text-center">
+               <p className="text-stone-400 text-sm max-w-lg mx-auto leading-relaxed">
+                 Every property tells a story. During our consultation, we'll discuss how to transform your specific landscape into a functional, sustainable work of art like those shown above.
+               </p>
+            </div>
+          </div>
       </div>
     </div>
   );
@@ -588,6 +720,7 @@ const App: React.FC = () => {
             <li><button onClick={() => setPage(Page.ABOUT)} className="hover:text-crescent-accent transition-colors">Our History</button></li>
             <li><button onClick={() => setPage(Page.CONTACT)} className="hover:text-crescent-accent transition-colors">Wholesale Inquiry</button></li>
             <li><button onClick={() => setPage(Page.AVAILABILITY)} className="hover:text-crescent-accent transition-colors">Availability List</button></li>
+            <li><button onClick={() => setPage(Page.EVENTS)} className="hover:text-crescent-accent transition-colors">Events Calendar</button></li>
           </ul>
         </div>
         
@@ -694,6 +827,8 @@ const App: React.FC = () => {
         return <AboutPage />;
       case Page.CONTACT:
         return <ContactPage />;
+      case Page.EVENTS:
+      return <EventsCalendar onBack={() => setPage(Page.HOME)} />;
       case Page.CHECKOUT:
         // IMPORTANT: We now use the new component and pass the required props
         return (
